@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Трекер сну",
+    "slug": "sleep-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "sleeptracker",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F2F2F7",
+    "android": {
+      "package": "com.sleeptracker.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon-foreground.png",
+        "backgroundImage": "./assets/adaptive-icon-background.png",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#1C1B4B",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2b92cd5d-71df-4f22-b05f-a445b0fe6f8a"
+      }
+    }
+  }
+}

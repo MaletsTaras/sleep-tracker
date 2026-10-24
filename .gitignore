@@ -1,0 +1,25 @@
+# залежності та кеш
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# нативні папки генеруються автоматично (EAS / expo prebuild)
+/android
+/ios
+
+# ключі підпису та секрети — ніколи не комітити
+*.jks
+*.keystore
+*.p12
+*.p8
+*.key
+*.mobileprovision
+.env
+.env.*
+
+# системне
+.DS_Store
+*.log
+npm-debug.*
