@@ -9,6 +9,7 @@ import type { DateISO } from '../domain/types';
 import { readoutFor, seriesToBars } from '../state/chartData';
 import { useApp } from '../state/AppContext';
 import { dayValuesFor, greetingFor, recordFor, summarizeRecent } from '../state/selectors';
+import { useDemoControls } from '../state/useDemoControls';
 import { useCurrentTip } from '../state/useTip';
 import { layout } from '../theme/layout';
 import { useTheme } from '../theme/ThemeProvider';
@@ -25,7 +26,6 @@ import { Tap } from '../ui/Tap';
 import { Text } from '../ui/Text';
 import { Tile } from '../ui/Tile';
 import { TipCard } from '../ui/TipCard';
-import { useToast } from '../ui/Toast';
 
 export interface TodayScreenProps {
   onAdd: (date?: DateISO) => void;
@@ -34,8 +34,8 @@ export interface TodayScreenProps {
 
 export function TodayScreen({ onAdd, onOpenStats }: TodayScreenProps) {
   const { colors } = useTheme();
-  const toast = useToast();
-  const { records, settings, today, streaks, hasDemo, tipsStore, loadDemoData, removeDemoData } = useApp();
+  const { records, settings, today, streaks, hasDemo, tipsStore } = useApp();
+  const demoControls = useDemoControls();
   const [selected, setSelected] = useState<number | null>(null);
 
   const manual = useMemo(() => dayValuesFor(records, 'manual'), [records]);
@@ -48,19 +48,11 @@ export function TodayScreen({ onAdd, onOpenStats }: TodayScreenProps) {
   const recent = useMemo(() => summarizeRecent(manual, today, settings.goalMinutes), [manual, today, settings.goalMinutes]);
   const readout = selected !== null ? readoutFor(last7[selected], 'week') : null;
 
-  const { tip, nextAt } = useCurrentTip(settings.showTips, tipsStore);
+  const { tip, nextAt, another } = useCurrentTip(settings.showTips, tipsStore, settings.remoteTips);
 
   const goal = settings.goalMinutes;
   const minutes = todayRecord?.minutes ?? 0;
   const reached = todayRecord !== undefined && minutes >= goal;
-
-  const runDemo = async (action: () => Promise<number>, message: (n: number) => string) => {
-    try {
-      toast.show(message(await action()));
-    } catch (failure) {
-      toast.show(failure instanceof Error ? failure.message : 'Не вдалося виконати дію', 'info');
-    }
-  };
 
   return (
     <Screen title={greetingFor(new Date().getHours())} subtitle={capitalize(formatDayLong(today))}>
@@ -140,7 +132,7 @@ export function TodayScreen({ onAdd, onOpenStats }: TodayScreenProps) {
             title="Подивитися на прикладі"
             variant="plain"
             size="compact"
-            onPress={() => runDemo(loadDemoData, (n) => `Додано ${n} демонстраційних записів`)}
+            onPress={demoControls.load}
           />
         </View>
       ) : null}
@@ -230,7 +222,7 @@ export function TodayScreen({ onAdd, onOpenStats }: TodayScreenProps) {
 
       {settings.showTips && tip ? (
         <View style={{ marginTop: layout.sectionGap }}>
-          <TipCard tip={tip} nextAt={nextAt} />
+          <TipCard tip={tip} nextAt={nextAt} onAnother={another} />
         </View>
       ) : null}
 
@@ -244,7 +236,7 @@ export function TodayScreen({ onAdd, onOpenStats }: TodayScreenProps) {
             title="Прибрати"
             variant="tinted"
             size="compact"
-            onPress={() => runDemo(removeDemoData, (n) => `Прибрано ${n} демонстраційних записів`)}
+            onPress={demoControls.remove}
           />
         </Card>
       ) : null}

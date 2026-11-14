@@ -58,6 +58,8 @@ export interface Settings {
   theme: ThemePreference;
   weekStartsOn: WeekStart;
   showTips: boolean;
+  /** Підвантажувати нові поради з інтернету (публічний JSON-файл). */
+  remoteTips: boolean;
 }
 
 export const GOAL_MIN_MINUTES = 240; // 4 год
@@ -70,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   weekStartsOn: 1,
   showTips: true,
+  remoteTips: true,
 };
 
 /** Позначка, якою відмічаються демонстраційні записи. */
@@ -77,4 +80,14 @@ export const DEMO_META_KEY = 'demo';
 
 export function isDemoRecord(record: Pick<SleepRecord, 'meta'>): boolean {
   return record.meta?.[DEMO_META_KEY] === true;
+}
+
+/**
+ * Позначка запису, який починався як демонстраційний, але його змінив користувач.
+ * Такий запис уже «свій» (рахується в статистиці й копії), але «Прибрати демо» може запитати, що з ним робити.
+ */
+export const DEMO_EDITED_META_KEY = 'demoEdited';
+
+export function isEditedDemoRecord(record: Pick<SleepRecord, 'meta'>): boolean {
+  return record.meta?.[DEMO_EDITED_META_KEY] === true;
 }

@@ -60,6 +60,10 @@ export interface Palette {
   // нижня панель вкладок, затемнення, тіні
   tabBar: string;
   tabBarBorder: string;
+  /** «Скляна» лінза під активною вкладкою: заливка, рамка й блик зверху. */
+  lens: string;
+  lensBorder: string;
+  lensSheen: readonly [string, string];
   shadow: string;
   overlay: string;
   toast: string;
@@ -110,6 +114,9 @@ export const lightColors: Palette = {
 
   tabBar: '#FFFFFF',
   tabBarBorder: '#0000001A',
+  lens: '#7676801F',
+  lensBorder: '#FFFFFFCC',
+  lensSheen: ['#FFFFFFB3', '#FFFFFF00'],
   shadow: '#1C1B4B',
   overlay: '#00000059',
   toast: '#1C1C1E',
@@ -160,6 +167,9 @@ export const darkColors: Palette = {
 
   tabBar: '#1C1C1E',
   tabBarBorder: '#FFFFFF1F',
+  lens: '#FFFFFF24',
+  lensBorder: '#FFFFFF33',
+  lensSheen: ['#FFFFFF40', '#FFFFFF00'],
   shadow: '#000000',
   overlay: '#000000A6',
   toast: '#F2F2F7',

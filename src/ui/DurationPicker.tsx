@@ -8,6 +8,15 @@ import { Text } from './Text';
 
 const ROWS = 5;
 
+/**
+ * Пара «число — підпис» стоїть по центру свого стовпця, тому обидва барабани
+ * симетричні відносно середини смуги вибору: число вирівняно праворуч до центра, підпис — одразу за ним.
+ */
+const NUM_W = 38;
+const UNIT_GAP = 6;
+const UNIT_W = 34;
+const GROUP_W = NUM_W + UNIT_GAP + UNIT_W;
+
 export interface DurationPickerProps {
   /** Тривалість у хвилинах (0..1439). */
   minutes: number;
@@ -143,28 +152,30 @@ function Wheel({ count, value, unit, label, pad, itemHeight, onChange }: WheelPr
           const distance = Math.abs(index - active);
           const opacity = distance === 0 ? 1 : distance === 1 ? 0.55 : distance === 2 ? 0.28 : 0.14;
           return (
-            <View
-              key={index}
-              style={{ height: itemHeight, justifyContent: 'center', alignItems: 'flex-end', paddingRight: 52 }}
-            >
-              <Text
-                variant="title2"
-                tabular
-                style={{ opacity, fontFamily: distance === 0 ? fontFamilies.bold : fontFamilies.medium }}
-              >
-                {pad ? String(index).padStart(2, '0') : String(index)}
-              </Text>
+            <View key={index} style={{ height: itemHeight, justifyContent: 'center', alignItems: 'center' }}>
+              <View style={{ width: GROUP_W, paddingRight: UNIT_GAP + UNIT_W, alignItems: 'flex-end' }}>
+                <Text
+                  variant="title2"
+                  tabular
+                  numberOfLines={1}
+                  style={{ opacity, fontFamily: distance === 0 ? fontFamilies.bold : fontFamilies.medium }}
+                >
+                  {pad ? String(index).padStart(2, '0') : String(index)}
+                </Text>
+              </View>
             </View>
           );
         })}
       </ScrollView>
       <View
         pointerEvents="none"
-        style={{ position: 'absolute', right: 10, top: padY, height: itemHeight, width: 34, justifyContent: 'center' }}
+        style={{ position: 'absolute', left: 0, right: 0, top: padY, height: itemHeight, alignItems: 'center', justifyContent: 'center' }}
       >
-        <Text variant="callout" color="secondaryLabel" style={{ fontFamily: fontFamilies.medium }}>
-          {unit}
-        </Text>
+        <View style={{ width: GROUP_W, paddingLeft: NUM_W + UNIT_GAP }}>
+          <Text variant="callout" color="secondaryLabel" numberOfLines={1} style={{ fontFamily: fontFamilies.medium }}>
+            {unit}
+          </Text>
+        </View>
       </View>
     </View>
   );

@@ -6,16 +6,19 @@ import { fontFamilies } from '../theme/typography';
 import { TIP_KIND_LABELS, type Tip } from '../tips/types';
 import { Card } from './Card';
 import { Icon } from './Icon';
+import { Tap } from './Tap';
 import { Text } from './Text';
 
 export interface TipCardProps {
   tip: Tip;
   /** Коли порада зміниться (мс від епохи). */
   nextAt: number;
+  /** Показати іншу пораду просто зараз. */
+  onAnother?: () => void;
 }
 
 /** Порада або цікавий факт; змінюється кожні дві години. */
-export function TipCard({ tip, nextAt }: TipCardProps) {
+export function TipCard({ tip, nextAt, onAnother }: TipCardProps) {
   const { colors } = useTheme();
   const isFact = tip.kind === 'fact';
   return (
@@ -41,9 +44,19 @@ export function TipCard({ tip, nextAt }: TipCardProps) {
       <Text variant="body" accessibilityLiveRegion="polite">
         {tip.text}
       </Text>
-      <Text variant="footnote" color="secondaryLabel" style={{ marginTop: 12 }}>
-        {`Наступна — о ${clockTimeLabel(nextAt)}`}
-      </Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+        <Text variant="footnote" color="secondaryLabel" style={{ flex: 1 }}>
+          {`Наступна — о ${clockTimeLabel(nextAt)}`}
+        </Text>
+        {onAnother ? (
+          <Tap onPress={onAnother} haptic="selection" hitSlop={10} accessibilityLabel="Показати іншу пораду" style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text variant="footnote" color="tint" style={{ fontFamily: fontFamilies.semibold }}>
+              Ще одна
+            </Text>
+            <Icon name="chevronRight" size={14} color={colors.tint} strokeWidth={2.4} />
+          </Tap>
+        ) : null}
+      </View>
     </Card>
   );
 }

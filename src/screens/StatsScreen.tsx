@@ -16,6 +16,7 @@ import { SOURCE_LABELS, type DateISO, type SourceId } from '../domain/types';
 import { useApp } from '../state/AppContext';
 import { readoutFor, seriesToBars, weekdayBars } from '../state/chartData';
 import { buildInsights, dayValuesFor, hasSource } from '../state/selectors';
+import { useDemoControls } from '../state/useDemoControls';
 import { layout } from '../theme/layout';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontFamilies } from '../theme/typography';
@@ -33,7 +34,6 @@ import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl';
 import { Tap } from '../ui/Tap';
 import { Text } from '../ui/Text';
 import { Tile } from '../ui/Tile';
-import { useToast } from '../ui/Toast';
 
 const KIND_OPTIONS: readonly SegmentOption<PeriodKind>[] = [
   { value: 'week', label: 'Тиждень' },
@@ -64,8 +64,8 @@ export interface StatsScreenProps {
 
 export function StatsScreen({ onAdd }: StatsScreenProps) {
   const { colors } = useTheme();
-  const toast = useToast();
-  const { records, settings, today, loadDemoData } = useApp();
+  const { records, settings, today } = useApp();
+  const demoControls = useDemoControls();
 
   const [kind, setKind] = useState<PeriodKind>('week');
   const [anchor, setAnchor] = useState<DateISO>(today);
@@ -103,14 +103,6 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
   const changeKind = (next: PeriodKind) => {
     setKind(next);
     setAnchor(today);
-  };
-
-  const runDemo = async () => {
-    try {
-      toast.show(`Додано ${await loadDemoData()} демонстраційних записів`);
-    } catch (failure) {
-      toast.show(failure instanceof Error ? failure.message : 'Не вдалося додати демо-дані', 'info');
-    }
   };
 
   const hasAnyRecords = days.length > 0;
@@ -175,7 +167,7 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
             {activeSource === 'manual' ? (
               <>
                 <Button title="Додати запис" icon="plus" onPress={() => onAdd(today)} />
-                <Button title="Подивитися на прикладі" variant="plain" onPress={runDemo} style={{ marginTop: 6 }} />
+                <Button title="Подивитися на прикладі" variant="plain" onPress={demoControls.load} style={{ marginTop: 6 }} />
               </>
             ) : null}
           </EmptyState>

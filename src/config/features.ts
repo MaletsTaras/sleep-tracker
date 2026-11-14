@@ -5,9 +5,9 @@
 export const features: { watchSync: boolean; remoteTips: boolean } = {
   /** Дані з годинника через Health Connect. Потребує нативного модуля — див. docs/ROADMAP.md. */
   watchSync: false,
-  /** Поради з інтернету (JSON-стрічка за посиланням нижче). */
-  remoteTips: false,
+  /** Поради з інтернету (JSON-стрічка за посиланням нижче); користувач може вимкнути їх у параметрах. */
+  remoteTips: true,
 };
 
 /** Адреса JSON-стрічки з порадами. Формат описано в src/tips/remote.ts. */
-export const TIPS_FEED_URL: string = '';
+export const TIPS_FEED_URL: string = 'https://raw.githubusercontent.com/MaletsTaras/sleep-tracker/main/feed/tips.json';

@@ -105,7 +105,7 @@ export function parseBackup(text: string): BackupParseResult {
   if (typeof obj.settings === 'object' && obj.settings !== null) {
     const raw = obj.settings as Record<string, unknown>;
     const asStrings: Record<string, string> = {};
-    for (const key of ['goalMinutes', 'theme', 'weekStartsOn', 'showTips']) {
+    for (const key of ['goalMinutes', 'theme', 'weekStartsOn', 'showTips', 'remoteTips']) {
       if (raw[key] !== undefined) asStrings[key] = String(raw[key]);
     }
     const parsed = parseSettings(asStrings);
@@ -114,6 +114,7 @@ export function parseBackup(text: string): BackupParseResult {
     if (asStrings.theme !== undefined) settings.theme = parsed.theme;
     if (asStrings.weekStartsOn !== undefined) settings.weekStartsOn = parsed.weekStartsOn;
     if (asStrings.showTips !== undefined) settings.showTips = parsed.showTips;
+    if (asStrings.remoteTips !== undefined) settings.remoteTips = parsed.remoteTips;
   }
 
   return {

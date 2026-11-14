@@ -1,3 +1,4 @@
+import { EXTRA_TIPS } from './extraTips';
 import type { Tip, TipsProvider } from './types';
 
 /**
@@ -5,7 +6,7 @@ import type { Tip, TipsProvider } from './types';
  * Нові поради можна просто дописувати сюди (id мають бути унікальні) —
  * або підвантажувати з інтернету, див. docs/ROADMAP.md.
  */
-export const LOCAL_TIPS: readonly Tip[] = [
+const BASE_TIPS: readonly Tip[] = [
   // --- Поради ---
   { id: 'tip-regular', kind: 'tip', text: 'Лягайте й прокидайтеся приблизно в один і той самий час, навіть у вихідні — так внутрішній годинник працює стабільніше.' },
   { id: 'tip-morning-light', kind: 'tip', text: 'Вранці вийдіть на денне світло хоча б на кілька хвилин: воно допомагає налаштувати добовий ритм і легше заснути ввечері.' },
@@ -49,6 +50,9 @@ export const LOCAL_TIPS: readonly Tip[] = [
   { id: 'fact-latency', kind: 'fact', text: 'Здорова людина зазвичай засинає за 10–20 хвилин. Якщо ви «вимикаєтеся» за хвилину-дві, це часто ознака недосипу.' },
   { id: 'fact-regularity', kind: 'fact', text: 'Для самопочуття важлива не лише кількість годин, а й регулярність: стабільний час засинання зазвичай корисніший за рідкісні «рекорди».' },
 ];
+
+/** Увесь вбудований набір: стартові поради й факти плюс додаткові з `extraTips.ts`. */
+export const LOCAL_TIPS: readonly Tip[] = [...BASE_TIPS, ...EXTRA_TIPS];
 
 export class LocalTipsProvider implements TipsProvider {
   readonly id = 'local';
