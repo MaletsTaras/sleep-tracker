@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
 
 import { useTheme } from '../theme/ThemeProvider';
 import { selectionHaptic } from './haptics';
+import { springs, useReduceMotion } from './motion';
 
 export interface ToggleProps {
   value: boolean;
@@ -18,11 +19,24 @@ const TRAVEL = TRACK_W - THUMB - 4;
 /** Перемикач у стилі iOS. */
 export function Toggle({ value, onValueChange, accessibilityLabel }: ToggleProps) {
   const { colors } = useTheme();
+  const reduceMotion = useReduceMotion();
   const x = useRef(new Animated.Value(value ? TRAVEL : 0)).current;
+  const press = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(x, { toValue: value ? TRAVEL : 0, duration: 180, useNativeDriver: true }).start();
-  }, [value, x]);
+    if (reduceMotion) {
+      x.setValue(value ? TRAVEL : 0);
+      return;
+    }
+    Animated.spring(x, { toValue: value ? TRAVEL : 0, ...springs.thumb, useNativeDriver: true }).start();
+  }, [value, x, reduceMotion]);
+
+  const stretch = useMemo(() => press.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] }), [press]);
+
+  const squeeze = (down: boolean) => {
+    if (reduceMotion) return;
+    Animated.spring(press, { toValue: down ? 1 : 0, ...springs.press, useNativeDriver: true }).start();
+  };
 
   return (
     <Pressable
@@ -30,6 +44,8 @@ export function Toggle({ value, onValueChange, accessibilityLabel }: ToggleProps
       accessibilityLabel={accessibilityLabel}
       accessibilityState={{ checked: value }}
       hitSlop={8}
+      onPressIn={() => squeeze(true)}
+      onPressOut={() => squeeze(false)}
       onPress={() => {
         selectionHaptic();
         onValueChange(!value);
@@ -48,7 +64,8 @@ export function Toggle({ value, onValueChange, accessibilityLabel }: ToggleProps
           height: THUMB,
           borderRadius: THUMB / 2,
           backgroundColor: '#FFFFFF',
-          transform: [{ translateX: x }],
+          // Під пальцем бігунок трохи витягується в довжину, як у iOS.
+          transform: [{ translateX: x }, { scaleX: stretch }],
           shadowColor: '#000000',
           shadowOpacity: 0.25,
           shadowRadius: 2,

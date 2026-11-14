@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Pressable, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, View, type LayoutChangeEvent, type StyleProp, type ViewStyle } from 'react-native';
 
 import { useTheme } from '../theme/ThemeProvider';
 import { fontFamilies } from '../theme/typography';
 import { selectionHaptic } from './haptics';
+import { springs, useReduceMotion } from './motion';
+import { Tap } from './Tap';
 import { Text } from './Text';
 
 export interface SegmentOption<T extends string> {
@@ -24,6 +26,7 @@ const HEIGHT = 36;
 /** Сегментований перемикач у стилі iOS із плавним бігунком. */
 export function SegmentedControl<T extends string>({ options, value, onChange, style }: SegmentedControlProps<T>) {
   const { colors } = useTheme();
+  const reduceMotion = useReduceMotion();
   const [width, setWidth] = useState(0);
   const index = Math.max(
     0,
@@ -37,13 +40,13 @@ export function SegmentedControl<T extends string>({ options, value, onChange, s
   useEffect(() => {
     if (segmentWidth <= 0) return;
     const target = index * segmentWidth;
-    if (!placed.current) {
+    if (!placed.current || reduceMotion) {
       x.setValue(target);
       placed.current = true;
       return;
     }
-    Animated.spring(x, { toValue: target, tension: 260, friction: 26, useNativeDriver: true }).start();
-  }, [index, segmentWidth, x]);
+    Animated.spring(x, { toValue: target, ...springs.thumb, useNativeDriver: true }).start();
+  }, [index, segmentWidth, x, reduceMotion]);
 
   return (
     <View
@@ -75,10 +78,12 @@ export function SegmentedControl<T extends string>({ options, value, onChange, s
         {options.map((option) => {
           const selected = option.value === value;
           return (
-            <Pressable
+            <Tap
               key={option.value}
               accessibilityRole="tab"
               accessibilityState={{ selected }}
+              pressedScale={0.94}
+              pressedOpacity={0.65}
               onPress={() => {
                 if (selected) return;
                 selectionHaptic();
@@ -94,7 +99,7 @@ export function SegmentedControl<T extends string>({ options, value, onChange, s
               >
                 {option.label}
               </Text>
-            </Pressable>
+            </Tap>
           );
         })}
       </View>

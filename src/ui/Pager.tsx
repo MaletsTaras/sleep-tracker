@@ -151,6 +151,14 @@ export interface PagerProps {
 export function Pager({ pager, children }: PagerProps) {
   const [height, setHeight] = useState(0);
   const pages = Children.toArray(children);
+  // Перша сторінка з'являється одразу, решту «розігріваємо» по одній у спокійні хвилини,
+  // щоб старт застосунку не чекав на всі екрани, а свайп не підвисав на монтуванні.
+  const [warm, setWarm] = useState(1);
+  useEffect(() => {
+    if (warm >= pages.length) return undefined;
+    const timer = setTimeout(() => setWarm((value) => value + 1), warm === 1 ? 700 : 350);
+    return () => clearTimeout(timer);
+  }, [warm, pages.length]);
 
   return (
     <View style={{ flex: 1 }} onLayout={(event) => setHeight(event.nativeEvent.layout.height)}>
@@ -170,7 +178,7 @@ export function Pager({ pager, children }: PagerProps) {
           style={{ flex: 1 }}
         >
           {pages.map((page, index) => (
-            <PageFrame key={index} pager={pager} index={index} height={height}>
+            <PageFrame key={index} pager={pager} index={index} height={height} mounted={index < warm || pager.seen[index] === true}>
               {page}
             </PageFrame>
           ))}
@@ -184,18 +192,20 @@ interface PageFrameProps {
   pager: PagerController;
   index: number;
   height: number;
+  /** Чи вже будувати вміст сторінки (інакше лишається порожня рамка потрібного розміру). */
+  mounted: boolean;
   children?: ReactNode;
 }
 
 /** Сторінка під час свайпу трохи зменшується й тьмяніє, поки не стане на місце. */
-function PageFrame({ pager, index, height, children }: PageFrameProps) {
+function PageFrame({ pager, index, height, mounted, children }: PageFrameProps) {
   const reduceMotion = useReduceMotion();
   const active = pager.current === index;
   const range = [index - 1, index, index + 1];
   const motion = reduceMotion
     ? null
     : {
-        opacity: pager.position.interpolate({ inputRange: range, outputRange: [0.35, 1, 0.35], extrapolate: 'clamp' }),
+        opacity: pager.position.interpolate({ inputRange: range, outputRange: [0.45, 1, 0.45], extrapolate: 'clamp' }),
         transform: [
           { scale: pager.position.interpolate({ inputRange: range, outputRange: [0.94, 1, 0.94], extrapolate: 'clamp' }) },
         ],
@@ -208,7 +218,7 @@ function PageFrame({ pager, index, height, children }: PageFrameProps) {
         importantForAccessibility={active ? 'auto' : 'no-hide-descendants'}
         accessibilityElementsHidden={!active}
       >
-        {children}
+        {mounted ? children : null}
       </Animated.View>
     </PageActivation>
   );

@@ -91,7 +91,7 @@ export function ListRow({ icon, title, subtitle, right, onPress, destructive, ch
 
   if (!onPress) return content;
   return (
-    <Tap onPress={onPress} pressedOpacity={0.6} accessibilityLabel={title}>
+    <Tap onPress={onPress} pressedOpacity={0.6} pressedScale={1} accessibilityLabel={title}>
       {content}
     </Tap>
   );

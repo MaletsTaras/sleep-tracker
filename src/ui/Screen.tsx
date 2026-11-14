@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { Children, isValidElement, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { layout, TAB_BAR_FOOTPRINT } from '../theme/layout';
 import { useTheme } from '../theme/ThemeProvider';
+import { Reveal } from './Reveal';
 import { Text } from './Text';
 
 export interface ScreenProps {
@@ -18,6 +19,7 @@ export interface ScreenProps {
 export function Screen({ title, subtitle, right, children }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const blocks = Children.toArray(children);
 
   return (
     <ScrollView
@@ -30,7 +32,7 @@ export function Screen({ title, subtitle, right, children }: ScreenProps) {
       showsVerticalScrollIndicator={false}
       overScrollMode="never"
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
+      <Reveal index={0} style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 18 }}>
         <View style={{ flex: 1, paddingRight: 12 }}>
           <Text variant="largeTitle" accessibilityRole="header">
             {title}
@@ -42,8 +44,13 @@ export function Screen({ title, subtitle, right, children }: ScreenProps) {
           ) : null}
         </View>
         {right}
-      </View>
-      {children}
+      </Reveal>
+      {/* Кожен блок виринає зі своєю затримкою, тож екран «збирається» каскадом, а не з'являється одним шматком. */}
+      {blocks.map((block, index) => (
+        <Reveal key={isValidElement(block) && block.key !== null ? block.key : index} index={index + 1}>
+          {block}
+        </Reveal>
+      ))}
     </ScrollView>
   );
 }

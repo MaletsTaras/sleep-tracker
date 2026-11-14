@@ -14,6 +14,8 @@ export const springs = {
   bouncy: { stiffness: 320, damping: 17, mass: 1 },
   /** Аркуш знизу. */
   sheet: { stiffness: 300, damping: 30, mass: 1 },
+  /** Бігунок сегментованого перемикача: ледь помітний відскок. */
+  thumb: { stiffness: 380, damping: 26, mass: 1 },
 } as const;
 
 /** Чи ввімкнено в системі «Зменшити рух»: тоді замість руху міняємо стан одразу. */
