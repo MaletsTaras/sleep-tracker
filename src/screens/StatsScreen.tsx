@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
+import { yearOf } from '../domain/dates';
 import { formatDayMedium, formatDays, formatDuration, formatPercent, plural } from '../domain/format';
+import { buildYearHeatmap } from '../domain/heatmap';
 import {
   canGoNext,
   computeStats,
@@ -24,6 +26,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { BarChart } from '../ui/charts/BarChart';
 import { HBars, type HBarRow } from '../ui/charts/HBars';
+import { YearHeatmap } from '../ui/charts/YearHeatmap';
 import { DeltaBadge } from '../ui/DeltaBadge';
 import { Duration } from '../ui/Duration';
 import { EmptyState } from '../ui/EmptyState';
@@ -88,6 +91,11 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
   const bars = useMemo(() => seriesToBars(stats.series, kind), [stats.series, kind]);
   const weekdays = useMemo(() => weekdayBars(stats.weekdayAverages, settings.weekStartsOn), [stats.weekdayAverages, settings.weekStartsOn]);
   const insights = useMemo(() => buildInsights(stats), [stats]);
+  // «Рік у крапках» показуємо лише в річному режимі; джерело (мої записи / годинник) те саме, що й у решти статистики.
+  const heatmap = useMemo(
+    () => (kind === 'year' ? buildYearHeatmap(days, yearOf(period.start), today, settings.weekStartsOn) : null),
+    [kind, days, period.start, today, settings.weekStartsOn],
+  );
   const readout = selected !== null ? readoutFor(stats.series[selected], kind) : null;
 
   const maxBucket = Math.max(0, ...stats.buckets.map((bucket) => bucket.count));
@@ -212,6 +220,15 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
               </Text>
             </View>
           </Card>
+
+          {heatmap ? (
+            <>
+              <SectionTitle title="Рік у крапках" />
+              <Card padding={18}>
+                <YearHeatmap heatmap={heatmap} weekStartsOn={settings.weekStartsOn} />
+              </Card>
+            </>
+          ) : null}
 
           <SectionTitle title="Підсумки" />
           <View style={{ flexDirection: 'row' }}>

@@ -1,4 +1,4 @@
-import { Children, isValidElement, type ReactNode } from 'react';
+import { Children, Fragment, cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -6,6 +6,24 @@ import { layout, TAB_BAR_FOOTPRINT } from '../theme/layout';
 import { useTheme } from '../theme/ThemeProvider';
 import { Reveal } from './Reveal';
 import { Text } from './Text';
+
+/**
+ * Розкладає Fragment на окремі блоки (щоб кожен виринав зі своєю затримкою) і дає кожному стабільний ключ,
+ * що залежить від місця в розмітці, а не від порядкового номера: блок, який з'являється чи зникає, не зсуває решту.
+ */
+function flattenBlocks(nodes: ReactNode, prefix = ''): ReactNode[] {
+  const out: ReactNode[] = [];
+  for (const node of Children.toArray(nodes)) {
+    if (!isValidElement(node)) {
+      out.push(node);
+    } else if (node.type === Fragment) {
+      out.push(...flattenBlocks((node as ReactElement<{ children?: ReactNode }>).props.children, `${prefix}${node.key}/`));
+    } else {
+      out.push(prefix ? cloneElement(node, { key: `${prefix}${node.key}` }) : node);
+    }
+  }
+  return out;
+}
 
 export interface ScreenProps {
   title: string;
@@ -19,7 +37,7 @@ export interface ScreenProps {
 export function Screen({ title, subtitle, right, children }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const blocks = Children.toArray(children);
+  const blocks = flattenBlocks(children);
 
   return (
     <ScrollView

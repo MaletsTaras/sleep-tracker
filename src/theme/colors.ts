@@ -39,6 +39,8 @@ export interface Palette {
   chartBarDim: string;
   chartGrid: string;
   chartGoal: string;
+  /** Кольори груп сну в «Році в крапках»: <6 год, 6–7, 7–8, 8–9, 9+ (від найкоротшого). */
+  heat: readonly [string, string, string, string, string];
 
   // стани (завжди разом зі знаком чи підписом)
   positive: string;
@@ -95,6 +97,7 @@ export const lightColors: Palette = {
   chartBar: '#5856D6',
   chartBarDim: '#5856D62E',
   chartGrid: '#ECECF0',
+  heat: ['#FF3B30', '#1E8E4E', '#34C759', '#8EE3C8', '#FF9500'],
   chartGoal: '#0000008C',
 
   positive: '#1F7A3A',
@@ -148,6 +151,7 @@ export const darkColors: Palette = {
   chartBar: '#7E7CF6',
   chartBarDim: '#7E7CF640',
   chartGrid: '#2C2C2E',
+  heat: ['#FF453A', '#2FA45F', '#30D158', '#6FE3C7', '#FF9F0A'],
   chartGoal: '#FFFFFF99',
 
   positive: '#30D158',
