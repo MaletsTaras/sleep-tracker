@@ -121,6 +121,7 @@ function HistoryRow({ record, goal, today, onPress }: HistoryRowProps) {
     <Tap
       onPress={onPress}
       pressedOpacity={0.6}
+      pressedScale={1}
       accessibilityLabel={`${relativeDayLabel(record.date, today, diffDays)}: ${formatDuration(record.minutes)}${demo ? ', демо' : ''}`}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14 }}>

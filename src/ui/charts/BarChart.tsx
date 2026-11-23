@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Pressable, View, type LayoutChangeEvent } from 'react-native';
-import Svg, { Circle, Line, Path } from 'react-native-svg';
+import { useMemo, useState } from 'react';
+import { Animated, Pressable, View, type LayoutChangeEvent } from 'react-native';
+import Svg, { Circle, Line } from 'react-native-svg';
 
-import { niceScale, roundedTopBarPath } from '../../domain/chartScale';
+import { niceScale } from '../../domain/chartScale';
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontFamilies } from '../../theme/typography';
 import { Text } from '../Text';
+import { useGrow } from '../useGrow';
 
 export interface BarDatum {
   key: string;
@@ -85,24 +86,33 @@ export function BarChart({
               />
             ))}
 
-            {data.map((d, i) => {
-              if (d.future) return null;
-              const cx = slot * (i + 0.5);
-              if (d.value === null) {
-                return <Circle key={d.key} cx={cx} cy={baseline - 3} r={1.6} fill={colors.tertiaryLabel} />;
-              }
-              const height = Math.max(2, baseline - yOf(d.value));
-              const dim = hasSelection && selectedIndex !== i;
-              return (
-                <Path
-                  key={d.key}
-                  d={roundedTopBarPath(cx - barWidth / 2, baseline, barWidth, height, BAR_RADIUS)}
-                  fill={dim ? colors.chartBarDim : colors.chartBar}
-                />
-              );
-            })}
+            {data.map((d, i) =>
+              !d.future && d.value === null ? (
+                <Circle key={d.key} cx={slot * (i + 0.5)} cy={baseline - 3} r={1.6} fill={colors.tertiaryLabel} />
+              ) : null,
+            )}
+          </Svg>
 
-            {goal !== null && goal > 0 ? (
+          {/* Стовпчики — окремі анімовані блоки: «виростають» від лінії, коли сторінку відкрито. */}
+          {data.map((d, i) => {
+            if (d.future || d.value === null) return null;
+            const dim = hasSelection && selectedIndex !== i;
+            return (
+              <GrowBar
+                key={d.key}
+                x={slot * (i + 0.5) - barWidth / 2}
+                bottom={baseline}
+                width={barWidth}
+                height={Math.max(2, baseline - yOf(d.value))}
+                color={dim ? colors.chartBarDim : colors.chartBar}
+                delay={Math.min(i, 14) * 16}
+              />
+            );
+          })}
+
+          {/* Лінія цілі лежить над стовпчиками. */}
+          {goal !== null && goal > 0 ? (
+            <Svg width={width} height={totalHeight} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
               <Line
                 x1={0}
                 x2={plotWidth}
@@ -112,8 +122,8 @@ export function BarChart({
                 strokeWidth={1.5}
                 strokeDasharray="5,4"
               />
-            ) : null}
-          </Svg>
+            </Svg>
+          ) : null}
 
           {showYAxis
             ? scale.ticks.map((tick, i) => (
@@ -176,5 +186,37 @@ export function BarChart({
         </>
       ) : null}
     </View>
+  );
+}
+
+interface GrowBarProps {
+  x: number;
+  /** Координата основи стовпчика (зверху вниз). */
+  bottom: number;
+  width: number;
+  height: number;
+  color: string;
+  delay: number;
+}
+
+/** Стовпчик, що росте знизу вгору: масштабується по вертикалі, а зсув тримає основу на місці. */
+function GrowBar({ x, bottom, width, height, color, delay }: GrowBarProps) {
+  const grow = useGrow(delay);
+  const lift = useMemo(() => grow.interpolate({ inputRange: [0, 1], outputRange: [height / 2, 0] }), [grow, height]);
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        left: x,
+        top: bottom - height,
+        width,
+        height,
+        borderTopLeftRadius: BAR_RADIUS,
+        borderTopRightRadius: BAR_RADIUS,
+        backgroundColor: color,
+        transform: [{ translateY: lift }, { scaleY: grow }],
+      }}
+    />
   );
 }

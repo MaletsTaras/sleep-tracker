@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
+import { yearOf } from '../domain/dates';
 import { formatDayMedium, formatDays, formatDuration, formatPercent, plural } from '../domain/format';
+import { buildYearHeatmap } from '../domain/heatmap';
 import {
   canGoNext,
   computeStats,
@@ -16,6 +18,7 @@ import { SOURCE_LABELS, type DateISO, type SourceId } from '../domain/types';
 import { useApp } from '../state/AppContext';
 import { readoutFor, seriesToBars, weekdayBars } from '../state/chartData';
 import { buildInsights, dayValuesFor, hasSource } from '../state/selectors';
+import { useDemoControls } from '../state/useDemoControls';
 import { layout } from '../theme/layout';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontFamilies } from '../theme/typography';
@@ -23,6 +26,7 @@ import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { BarChart } from '../ui/charts/BarChart';
 import { HBars, type HBarRow } from '../ui/charts/HBars';
+import { YearHeatmap } from '../ui/charts/YearHeatmap';
 import { DeltaBadge } from '../ui/DeltaBadge';
 import { Duration } from '../ui/Duration';
 import { EmptyState } from '../ui/EmptyState';
@@ -33,7 +37,6 @@ import { SegmentedControl, type SegmentOption } from '../ui/SegmentedControl';
 import { Tap } from '../ui/Tap';
 import { Text } from '../ui/Text';
 import { Tile } from '../ui/Tile';
-import { useToast } from '../ui/Toast';
 
 const KIND_OPTIONS: readonly SegmentOption<PeriodKind>[] = [
   { value: 'week', label: 'Тиждень' },
@@ -64,8 +67,8 @@ export interface StatsScreenProps {
 
 export function StatsScreen({ onAdd }: StatsScreenProps) {
   const { colors } = useTheme();
-  const toast = useToast();
-  const { records, settings, today, loadDemoData } = useApp();
+  const { records, settings, today } = useApp();
+  const demoControls = useDemoControls();
 
   const [kind, setKind] = useState<PeriodKind>('week');
   const [anchor, setAnchor] = useState<DateISO>(today);
@@ -88,6 +91,11 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
   const bars = useMemo(() => seriesToBars(stats.series, kind), [stats.series, kind]);
   const weekdays = useMemo(() => weekdayBars(stats.weekdayAverages, settings.weekStartsOn), [stats.weekdayAverages, settings.weekStartsOn]);
   const insights = useMemo(() => buildInsights(stats), [stats]);
+  // «Рік у крапках» показуємо лише в річному режимі; джерело (мої записи / годинник) те саме, що й у решти статистики.
+  const heatmap = useMemo(
+    () => (kind === 'year' ? buildYearHeatmap(days, yearOf(period.start), today, settings.weekStartsOn) : null),
+    [kind, days, period.start, today, settings.weekStartsOn],
+  );
   const readout = selected !== null ? readoutFor(stats.series[selected], kind) : null;
 
   const maxBucket = Math.max(0, ...stats.buckets.map((bucket) => bucket.count));
@@ -103,14 +111,6 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
   const changeKind = (next: PeriodKind) => {
     setKind(next);
     setAnchor(today);
-  };
-
-  const runDemo = async () => {
-    try {
-      toast.show(`Додано ${await loadDemoData()} демонстраційних записів`);
-    } catch (failure) {
-      toast.show(failure instanceof Error ? failure.message : 'Не вдалося додати демо-дані', 'info');
-    }
   };
 
   const hasAnyRecords = days.length > 0;
@@ -175,7 +175,7 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
             {activeSource === 'manual' ? (
               <>
                 <Button title="Додати запис" icon="plus" onPress={() => onAdd(today)} />
-                <Button title="Подивитися на прикладі" variant="plain" onPress={runDemo} style={{ marginTop: 6 }} />
+                <Button title="Подивитися на прикладі" variant="plain" onPress={demoControls.load} style={{ marginTop: 6 }} />
               </>
             ) : null}
           </EmptyState>
@@ -220,6 +220,15 @@ export function StatsScreen({ onAdd }: StatsScreenProps) {
               </Text>
             </View>
           </Card>
+
+          {heatmap ? (
+            <>
+              <SectionTitle title="Рік у крапках" />
+              <Card padding={18}>
+                <YearHeatmap heatmap={heatmap} weekStartsOn={settings.weekStartsOn} />
+              </Card>
+            </>
+          ) : null}
 
           <SectionTitle title="Підсумки" />
           <View style={{ flexDirection: 'row' }}>

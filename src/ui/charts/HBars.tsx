@@ -1,8 +1,10 @@
-import { View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Animated, View, type LayoutChangeEvent } from 'react-native';
 
 import { useTheme } from '../../theme/ThemeProvider';
 import { fontFamilies } from '../../theme/typography';
 import { Text } from '../Text';
+import { useGrow } from '../useGrow';
 
 export interface HBarRow {
   key: string;
@@ -29,7 +31,7 @@ export function HBars({ rows }: HBarsProps) {
 
   return (
     <View>
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <View
           key={row.key}
           accessible
@@ -44,21 +46,13 @@ export function HBars({ rows }: HBarsProps) {
           >
             {row.label}
           </Text>
-          <View style={{ flex: 1, height: BAR_HEIGHT, justifyContent: 'center' }}>
-            {row.count > 0 ? (
-              <View
-                style={{
-                  width: `${Math.max(3, (row.count / max) * 100)}%`,
-                  height: BAR_HEIGHT,
-                  backgroundColor: colors.chartBar,
-                  borderTopRightRadius: 4,
-                  borderBottomRightRadius: 4,
-                }}
-              />
-            ) : (
+          {row.count > 0 ? (
+            <FillBar fraction={Math.max(0.03, row.count / max)} delay={Math.min(index, 8) * 40} />
+          ) : (
+            <View style={{ flex: 1, height: BAR_HEIGHT, justifyContent: 'center' }}>
               <View style={{ height: 1, backgroundColor: colors.chartGrid }} />
-            )}
-          </View>
+            </View>
+          )}
           <Text
             variant="footnote"
             color={row.count > 0 ? 'label' : 'tertiaryLabel'}
@@ -70,6 +64,38 @@ export function HBars({ rows }: HBarsProps) {
           </Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+interface FillBarProps {
+  /** Частка ширини доріжки (0..1). */
+  fraction: number;
+  delay: number;
+}
+
+/** Смуга, що виїжджає зліва: масштабується по горизонталі, а зсув тримає лівий край на місці. */
+function FillBar({ fraction, delay }: FillBarProps) {
+  const { colors } = useTheme();
+  const grow = useGrow(delay);
+  const [trackWidth, setTrackWidth] = useState(0);
+  const barWidth = trackWidth * Math.min(1, fraction);
+  const slide = useMemo(() => grow.interpolate({ inputRange: [0, 1], outputRange: [-barWidth / 2, 0] }), [grow, barWidth]);
+  return (
+    <View
+      style={{ flex: 1, height: BAR_HEIGHT, justifyContent: 'center' }}
+      onLayout={(event: LayoutChangeEvent) => setTrackWidth(event.nativeEvent.layout.width)}
+    >
+      <Animated.View
+        style={{
+          width: barWidth,
+          height: BAR_HEIGHT,
+          backgroundColor: colors.chartBar,
+          borderTopRightRadius: 4,
+          borderBottomRightRadius: 4,
+          transform: [{ translateX: slide }, { scaleX: grow }],
+        }}
+      />
     </View>
   );
 }

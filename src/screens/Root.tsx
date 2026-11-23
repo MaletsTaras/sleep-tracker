@@ -4,7 +4,8 @@ import { BackHandler, View } from 'react-native';
 import type { DateISO } from '../domain/types';
 import { useApp } from '../state/AppContext';
 import { useTheme } from '../theme/ThemeProvider';
-import { TabBar, type TabKey } from '../ui/TabBar';
+import { Pager, usePager } from '../ui/Pager';
+import { TABS, TabBar } from '../ui/TabBar';
 import { EntrySheet } from './EntrySheet';
 import { HistoryScreen } from './HistoryScreen';
 import { SettingsScreen } from './SettingsScreen';
@@ -16,15 +17,22 @@ interface SheetState {
   date: DateISO;
 }
 
-/** Головний каркас: активна вкладка, плаваюча панель внизу й аркуш запису сну. */
+const STATS_PAGE = 1;
+
+/**
+ * Головний каркас: чотири екрани в одному горизонтальному «листку» (їх можна гортати пальцем),
+ * плаваюча панель вкладок із «скляною» лінзою й аркуш запису сну.
+ */
 export function Root() {
   const { colors } = useTheme();
   const { today } = useApp();
-  const [tab, setTab] = useState<TabKey>('today');
+  const pager = usePager(TABS.length, 0);
+  const { current, goTo } = pager;
   const [sheet, setSheet] = useState<SheetState>({ open: false, date: today });
 
   const openEntry = useCallback((date?: DateISO) => setSheet({ open: true, date: date ?? today }), [today]);
   const closeEntry = useCallback(() => setSheet((state) => ({ ...state, open: false })), []);
+  const openStats = useCallback(() => goTo(STATS_PAGE), [goTo]);
 
   // Кнопка «Назад» на Android: спершу закриваємо аркуш, потім повертаємось на «Сьогодні», і лише тоді виходимо.
   useEffect(() => {
@@ -33,23 +41,25 @@ export function Root() {
         closeEntry();
         return true;
       }
-      if (tab !== 'today') {
-        setTab('today');
+      if (current !== 0) {
+        goTo(0);
         return true;
       }
       return false;
     });
     return () => subscription.remove();
-  }, [sheet.open, tab, closeEntry]);
+  }, [sheet.open, current, goTo, closeEntry]);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {tab === 'today' ? <TodayScreen onAdd={openEntry} onOpenStats={() => setTab('stats')} /> : null}
-      {tab === 'stats' ? <StatsScreen onAdd={openEntry} /> : null}
-      {tab === 'history' ? <HistoryScreen onEdit={openEntry} onAdd={() => openEntry()} /> : null}
-      {tab === 'settings' ? <SettingsScreen /> : null}
+      <Pager pager={pager}>
+        <TodayScreen onAdd={openEntry} onOpenStats={openStats} />
+        <StatsScreen onAdd={openEntry} />
+        <HistoryScreen onEdit={openEntry} onAdd={() => openEntry()} />
+        <SettingsScreen />
+      </Pager>
 
-      <TabBar active={tab} onChange={setTab} onAdd={() => openEntry()} />
+      <TabBar pager={pager} onAdd={() => openEntry()} />
       <EntrySheet visible={sheet.open} initialDate={sheet.date} onClose={closeEntry} />
     </View>
   );

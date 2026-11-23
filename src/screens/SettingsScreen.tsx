@@ -13,6 +13,7 @@ import {
   type WeekStart,
 } from '../domain/types';
 import { useApp } from '../state/AppContext';
+import { useDemoControls } from '../state/useDemoControls';
 import { useTheme } from '../theme/ThemeProvider';
 import { fontFamilies } from '../theme/typography';
 import { successHaptic, warningHaptic } from '../ui/haptics';
@@ -48,7 +49,8 @@ function SoonPill() {
 
 export function SettingsScreen() {
   const toast = useToast();
-  const { records, settings, hasDemo, updateSettings, loadDemoData, removeDemoData, restoreBackup, eraseEverything } = useApp();
+  const { records, settings, hasDemo, updateSettings, restoreBackup, eraseEverything } = useApp();
+  const demoControls = useDemoControls();
 
   const realRecordCount = records.filter((record) => !isDemoRecord(record)).length;
 
@@ -110,15 +112,6 @@ export function SettingsScreen() {
           },
         ],
       );
-    });
-
-  const toggleDemo = () =>
-    attempt(async () => {
-      if (hasDemo) {
-        toast.show(`Прибрано ${await removeDemoData()} демонстраційних записів`);
-      } else {
-        toast.show(`Додано ${await loadDemoData()} демонстраційних записів`);
-      }
     });
 
   const confirmErase = () => {
@@ -198,11 +191,22 @@ export function SettingsScreen() {
             />
           }
         />
+        <ListRow
+          icon="sparkles"
+          title="Нові поради з інтернету"
+          subtitle="Раз на добу застосунок завантажує публічний файл із порадами"
+          right={
+            <Toggle
+              value={settings.remoteTips}
+              onValueChange={(value) => attempt(() => updateSettings({ remoteTips: value }))}
+              accessibilityLabel="Підвантажувати нові поради з інтернету"
+            />
+          }
+        />
       </ListGroup>
 
-      <ListGroup header="Підключення" footer="Ці можливості вже закладені в код застосунку й з’являться в наступних оновленнях.">
+      <ListGroup header="Підключення" footer="Підключення годинника вже закладене в код і з’явиться в наступних оновленнях.">
         <ListRow icon="watch" title="Годинник" subtitle="Da Fit → Health Connect" right={<SoonPill />} />
-        <ListRow icon="sparkles" title="Поради з інтернету" subtitle="Нові поради й факти з мережі" right={<SoonPill />} />
       </ListGroup>
 
       <ListGroup
@@ -215,8 +219,8 @@ export function SettingsScreen() {
         <ListRow
           icon="sparkles"
           title={hasDemo ? 'Прибрати демонстраційні дані' : 'Заповнити демонстраційними даними'}
-          subtitle={hasDemo ? undefined : '90 днів для прикладу, їх можна прибрати однією кнопкою'}
-          onPress={toggleDemo}
+          subtitle={hasDemo ? undefined : 'Понад рік даних для прикладу, їх можна прибрати однією кнопкою'}
+          onPress={hasDemo ? demoControls.remove : demoControls.load}
         />
       </ListGroup>
 
@@ -234,7 +238,7 @@ export function SettingsScreen() {
             </Text>
           }
         />
-        <ListRow icon="shield" title="Приватність" subtitle="Усі записи зберігаються лише на цьому телефоні й нікуди не надсилаються." />
+        <ListRow icon="shield" title="Приватність" subtitle="Записи зберігаються лише на цьому телефоні й нікуди не надсилаються. З інтернету завантажуються тільки поради (це можна вимкнути)." />
       </ListGroup>
     </Screen>
   );

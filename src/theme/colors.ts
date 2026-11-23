@@ -39,6 +39,8 @@ export interface Palette {
   chartBarDim: string;
   chartGrid: string;
   chartGoal: string;
+  /** Кольори груп сну в «Році в крапках»: <6 год, 6–7, 7–8, 8–9, 9+ (від найкоротшого). */
+  heat: readonly [string, string, string, string, string];
 
   // стани (завжди разом зі знаком чи підписом)
   positive: string;
@@ -60,6 +62,10 @@ export interface Palette {
   // нижня панель вкладок, затемнення, тіні
   tabBar: string;
   tabBarBorder: string;
+  /** «Скляна» лінза під активною вкладкою: заливка, рамка й блик зверху. */
+  lens: string;
+  lensBorder: string;
+  lensSheen: readonly [string, string];
   shadow: string;
   overlay: string;
   toast: string;
@@ -91,6 +97,7 @@ export const lightColors: Palette = {
   chartBar: '#5856D6',
   chartBarDim: '#5856D62E',
   chartGrid: '#ECECF0',
+  heat: ['#FF3B30', '#1E8E4E', '#34C759', '#8EE3C8', '#FF9500'],
   chartGoal: '#0000008C',
 
   positive: '#1F7A3A',
@@ -110,6 +117,9 @@ export const lightColors: Palette = {
 
   tabBar: '#FFFFFF',
   tabBarBorder: '#0000001A',
+  lens: '#7676801F',
+  lensBorder: '#FFFFFFCC',
+  lensSheen: ['#FFFFFFB3', '#FFFFFF00'],
   shadow: '#1C1B4B',
   overlay: '#00000059',
   toast: '#1C1C1E',
@@ -141,6 +151,7 @@ export const darkColors: Palette = {
   chartBar: '#7E7CF6',
   chartBarDim: '#7E7CF640',
   chartGrid: '#2C2C2E',
+  heat: ['#FF453A', '#2FA45F', '#30D158', '#6FE3C7', '#FF9F0A'],
   chartGoal: '#FFFFFF99',
 
   positive: '#30D158',
@@ -160,6 +171,9 @@ export const darkColors: Palette = {
 
   tabBar: '#1C1C1E',
   tabBarBorder: '#FFFFFF1F',
+  lens: '#FFFFFF24',
+  lensBorder: '#FFFFFF33',
+  lensSheen: ['#FFFFFF40', '#FFFFFF00'],
   shadow: '#000000',
   overlay: '#000000A6',
   toast: '#F2F2F7',

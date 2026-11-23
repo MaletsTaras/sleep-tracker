@@ -42,6 +42,7 @@ export function parseSettings(raw: Record<string, string | undefined>): Settings
     theme: parseTheme(raw.theme),
     weekStartsOn: parseWeekStart(raw.weekStartsOn),
     showTips: parseBool(raw.showTips, DEFAULT_SETTINGS.showTips),
+    remoteTips: parseBool(raw.remoteTips, DEFAULT_SETTINGS.remoteTips),
   };
 }
 
@@ -52,5 +53,6 @@ export function serializeSettings(patch: Partial<Settings>): Record<string, stri
   if (patch.theme !== undefined) out.theme = parseTheme(patch.theme);
   if (patch.weekStartsOn !== undefined) out.weekStartsOn = String(parseWeekStart(String(patch.weekStartsOn)));
   if (patch.showTips !== undefined) out.showTips = String(Boolean(patch.showTips));
+  if (patch.remoteTips !== undefined) out.remoteTips = String(Boolean(patch.remoteTips));
   return out;
 }

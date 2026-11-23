@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo } from 'react-native';
 
+import { usePageState } from './PageActivation';
+
 /**
  * Плавно «докручує» число до нової цілі (для наповнення місяця).
+ * Коли сторінка знову стає поточною, число «докручується» з нуля ще раз.
  * Якщо в системі ввімкнено «Зменшити рух», значення міняється одразу.
  */
 export function useTween(target: number, duration = 800, start = 0): number {
+  const { activations } = usePageState();
   const [value, setValue] = useState(start);
   const current = useRef(start);
+  const lastActivations = useRef(activations);
 
   useEffect(() => {
     let frame = 0;
     let cancelled = false;
-    const from = current.current;
+    const replay = lastActivations.current !== activations;
+    lastActivations.current = activations;
+    const from = replay ? start : current.current;
 
     const jump = () => {
       current.current = target;
@@ -51,7 +58,7 @@ export function useTween(target: number, duration = 800, start = 0): number {
       cancelled = true;
       cancelAnimationFrame(frame);
     };
-  }, [target, duration]);
+  }, [target, duration, activations, start]);
 
   return value;
 }

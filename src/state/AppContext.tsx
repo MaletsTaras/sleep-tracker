@@ -3,10 +3,19 @@ import { AppState } from 'react-native';
 
 import { features } from '../config/features';
 import type { RecordKey, SleepRepository } from '../data/repository';
-import { generateDemoRecords } from '../domain/demo';
+import { countDemo, DEMO_DAYS, generateDemoSet, type DemoCounts } from '../domain/demo';
 import { parseSettings, serializeSettings } from '../domain/settings';
 import { computeStreaks, type StreakInfo } from '../domain/streaks';
-import { DEFAULT_SETTINGS, isDemoRecord, type DateISO, type Settings, type SleepInput, type SleepRecord } from '../domain/types';
+import {
+  DEFAULT_SETTINGS,
+  DEMO_EDITED_META_KEY,
+  isDemoRecord,
+  isEditedDemoRecord,
+  type DateISO,
+  type Settings,
+  type SleepInput,
+  type SleepRecord,
+} from '../domain/types';
 import { getEnabledSources } from '../integrations/registry';
 import { syncSource, type SyncResult } from '../integrations/sync';
 import type { KeyValueStore } from '../tips/types';
@@ -22,7 +31,9 @@ export interface AppContextValue {
   today: DateISO;
   /** Серії рахуються за ручними записами. */
   streaks: StreakInfo;
-  /** Є хоча б один демонстраційний запис. */
+  /** Скільки в базі демонстраційних записів: ті, що лишились демо, і ті, що користувач змінив. */
+  demo: DemoCounts;
+  /** Є хоча б один демонстраційний запис (змінений теж). */
   hasDemo: boolean;
   /** Сховище «ключ — значення» для кешу порад з інтернету. */
   tipsStore: KeyValueStore;
@@ -31,7 +42,8 @@ export interface AppContextValue {
   updateSettings(patch: Partial<Settings>): Promise<void>;
   /** Додає демонстраційні записи лише там, де справжніх немає. Повертає кількість доданих. */
   loadDemoData(): Promise<number>;
-  removeDemoData(): Promise<number>;
+  /** Прибирає демонстраційні записи; зі `includeEdited` — і ті, що користувач змінив. Повертає кількість прибраних. */
+  removeDemoData(options?: { includeEdited?: boolean }): Promise<number>;
   restoreBackup(records: readonly SleepInput[], settings: Partial<Settings> | null): Promise<{ inserted: number; updated: number }>;
   eraseEverything(): Promise<void>;
   /** Забирає свіжі дані з увімкнених зовнішніх джерел (годинник). Без увімкнених джерел нічого не робить. */
@@ -58,6 +70,8 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
   const [status, setStatus] = useState<LoadStatus>('loading');
   const [error, setError] = useState<string | null>(null);
   const [records, setRecords] = useState<SleepRecord[]>([]);
+  const recordsRef = useRef(records);
+  recordsRef.current = records;
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -101,7 +115,16 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
 
   const saveSleep = useCallback(
     async (input: SleepInput) => {
-      await repo().upsertRecord(input);
+      // Змінюючи демонстраційну ніч, користувач робить її своєю, але ми пам'ятаємо походження:
+      // так «Прибрати демо» може запитати, що робити зі зміненими записами (а не лишити їх мовчки).
+      const source = input.source ?? 'manual';
+      const previous = recordsRef.current.find((record) => record.date === input.date && record.source === source);
+      let meta = input.meta;
+      if (meta === undefined && previous) {
+        if (isDemoRecord(previous)) meta = previous.minutes === input.minutes ? previous.meta : { [DEMO_EDITED_META_KEY]: true };
+        else if (isEditedDemoRecord(previous)) meta = previous.meta;
+      }
+      await repo().upsertRecord(meta === undefined ? input : { ...input, meta });
       await reload();
     },
     [repo, reload],
@@ -131,13 +154,16 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
   );
 
   const loadDemoData = useCallback(async () => {
-    const { inserted } = await repo().upsertMany(generateDemoRecords(today, 90), { onlyMissing: true });
+    const { inserted } = await repo().upsertMany(generateDemoSet(today, DEMO_DAYS), { onlyMissing: true });
     await reload();
     return inserted;
   }, [repo, reload, today]);
 
-  const removeDemoData = useCallback(async () => {
-    const keys = (await repo().listRecords()).filter(isDemoRecord).map((record): RecordKey => ({ date: record.date, source: record.source }));
+  const removeDemoData = useCallback(async (options?: { includeEdited?: boolean }) => {
+    const includeEdited = options?.includeEdited === true;
+    const keys = (await repo().listRecords())
+      .filter((record) => isDemoRecord(record) || (includeEdited && isEditedDemoRecord(record)))
+      .map((record): RecordKey => ({ date: record.date, source: record.source }));
     const removed = await repo().deleteMany(keys);
     await reload();
     return removed;
@@ -209,7 +235,8 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
     () => computeStreaks(records.filter((record) => record.source === 'manual').map((record) => record.date), today),
     [records, today],
   );
-  const hasDemo = useMemo(() => records.some(isDemoRecord), [records]);
+  const demo = useMemo(() => countDemo(records), [records]);
+  const hasDemo = demo.pure + demo.edited > 0;
 
   const value = useMemo<AppContextValue>(
     () => ({
@@ -219,6 +246,7 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
       settings,
       today,
       streaks,
+      demo,
       hasDemo,
       tipsStore,
       saveSleep,
@@ -238,6 +266,7 @@ export function AppProvider({ createRepository, children }: AppProviderProps) {
       settings,
       today,
       streaks,
+      demo,
       hasDemo,
       tipsStore,
       saveSleep,
