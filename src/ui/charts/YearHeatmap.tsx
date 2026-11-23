@@ -21,6 +21,9 @@ const GAP = 1.6;
 const MIN_DOT = 2;
 /** Підписуємо лише кожен другий рядок (як на GitHub): пн, ср, пт. */
 const LABELED_ROWS = [0, 2, 4] as const;
+/** Орієнтовна ширина однієї літери підпису місяця (шрифт 10) і мінімальний просвіт між підписами. */
+const MONTH_CHAR_W = 6.2;
+const MONTH_MIN_GAP = 3;
 
 export interface YearHeatmapProps {
   heatmap: Heatmap;
@@ -78,6 +81,18 @@ export function YearHeatmap({ heatmap, weekStartsOn }: YearHeatmapProps) {
   useEffect(() => setSelected(null), [heatmap]);
 
   const paths = useMemo(() => buildPaths(heatmap, pitch, dot), [heatmap, pitch, dot]);
+  // На вузьких екранах підписи місяців не вміщуються поруч: той, що наліз би на попередній, пропускаємо.
+  const monthLabels = useMemo(() => {
+    const shown: { month: number; col: number }[] = [];
+    let freeFrom = -Infinity;
+    for (const item of heatmap.months) {
+      const left = item.col * pitch;
+      if (left < freeFrom) continue;
+      shown.push(item);
+      freeFrom = left + MONTHS_TINY[item.month - 1].length * MONTH_CHAR_W + MONTH_MIN_GAP;
+    }
+    return shown;
+  }, [heatmap, pitch]);
   const lift = useMemo(() => grow.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }), [grow]);
 
   // Обробники жесту живуть довго, тож свіжі значення беруть звідси.
@@ -152,7 +167,7 @@ export function YearHeatmap({ heatmap, weekStartsOn }: YearHeatmapProps) {
         <View style={{ flex: 1 }} onLayout={(event: LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width)}>
           <View style={{ height: MONTH_BAND }} pointerEvents="none">
             {pitch > 0
-              ? heatmap.months.map((item) => (
+              ? monthLabels.map((item) => (
                   <Text
                     key={item.month}
                     variant="caption"
